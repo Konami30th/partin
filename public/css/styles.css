@@ -1,79 +1,64 @@
 body {
-  font-family: Tahoma, sans-serif;
-  background: #0a0f2c;
-  color: #fff;
+  font-family: Arial, sans-serif;
+  background: #121212;
+  color: #eee;
   margin: 0;
-  text-align: center;
-}
-.container {
-  max-width: 600px;
-  margin: auto;
-  padding: 2rem;
-}
-.center-content {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   height: 100vh;
 }
+
+.login-container {
+  background: #1e1e1e;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 0 15px #0af;
+}
+
 h1 {
-  font-size: 2rem;
   margin-bottom: 1.5rem;
 }
+
+form label {
+  display: block;
+  margin-top: 1rem;
+  margin-bottom: 0.3rem;
+  font-weight: bold;
+  text-align: left;
+}
+
 input[type="text"],
 input[type="password"],
 input[type="file"] {
-  padding: 0.8rem;
-  margin: 0.5rem 0;
   width: 100%;
-  max-width: 300px;
-  border-radius: 8px;
+  padding: 0.5rem;
+  border-radius: 6px;
   border: none;
+  outline: none;
   font-size: 1rem;
 }
+
 button {
-  padding: 0.8rem 1.5rem;
-  font-size: 1rem;
+  margin-top: 1.5rem;
+  width: 100%;
+  padding: 0.7rem;
+  background: #0af;
   border: none;
   border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  font-size: 1.1rem;
   cursor: pointer;
-  background: #1e90ff;
-  color: #fff;
-  margin-top: 1rem;
+  transition: background 0.3s ease;
 }
-.users-list {
-  background: #162050;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  max-height: 150px;
-  overflow-y: auto;
-  text-align: right;
+
+button:hover {
+  background: #08c;
 }
-.chat-box {
-  background: #111b3d;
-  border-radius: 8px;
-  padding: 1rem;
-  height: 250px;
-  overflow-y: auto;
-  margin-bottom: 1rem;
-  text-align: right;
-}
-.chat-message {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-}
-.chat-message img {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  margin-left: 8px;
-}
-#voiceControls {
-  margin-top: 1rem;
-}
-#micControl {
-  margin-top: 1rem;
+
+#error-msg {
+  font-weight: bold;
 }

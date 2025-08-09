@@ -1,99 +1,79 @@
-const joinForm = document.getElementById('joinForm');
+const form = document.getElementById('login-form');
+const profilePicInput = document.getElementById('profilePic');
+const previewImg = document.getElementById('profilePreview');
+const previewContainer = document.getElementById('preview-container');
+const errorMsg = document.getElementById('error-msg');
 
-joinForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
+let compressedProfilePicBase64 = null;
 
-  const roomId = document.getElementById('roomId').value.trim();
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const profilePicInput = document.getElementById('profilePic');
-
-  if (!roomId || !username || !password) {
-    alert('لطفاً همه فیلدها را پر کنید');
+profilePicInput.addEventListener('change', () => {
+  const file = profilePicInput.files[0];
+  if (!file) {
+    previewImg.style.display = 'none';
+    compressedProfilePicBase64 = null;
     return;
   }
 
-  let profilePicDataUrl = null;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = function () {
+      const canvas = document.createElement('canvas');
+      const maxSize = 100; // max width or height
+      let width = img.width;
+      let height = img.height;
 
-  if (profilePicInput.files.length > 0) {
-    const file = profilePicInput.files[0];
+      if (width > height) {
+        if (width > maxSize) {
+          height = height * (maxSize / width);
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = width * (maxSize / height);
+          height = maxSize;
+        }
+      }
 
-    try {
-      profilePicDataUrl = await compressImage(file, 100, 100, 0.7);
-    } catch (err) {
-      alert('خطا در فشرده‌سازی تصویر پروفایل');
-      return;
-    }
-  }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
 
-  if (profilePicDataUrl) {
-    localStorage.setItem('profilePicDataUrl', profilePicDataUrl);
-  } else {
-    localStorage.removeItem('profilePicDataUrl');
-  }
-
-  const params = new URLSearchParams({
-    roomId,
-    username,
-    password
-  });
-
-  window.location.href = `room.html?${params.toString()}`;
+      compressedProfilePicBase64 = canvas.toDataURL('image/jpeg', 0.7);
+      previewImg.src = compressedProfilePicBase64;
+      previewImg.style.display = 'inline-block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 });
 
-function compressImage(file, maxWidth, maxHeight, quality) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
 
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
+  errorMsg.innerText = '';
 
-      img.onload = () => {
-        let canvas = document.createElement('canvas');
-        let ctx = canvas.getContext('2d');
+  const userName = document.getElementById('username').value.trim();
+  const roomId = document.getElementById('roomId').value.trim();
+  const password = document.getElementById('password').value;
 
-        let width = img.width;
-        let height = img.height;
+  if (!userName || !roomId || !password) {
+    errorMsg.innerText = 'Please fill all required fields.';
+    return;
+  }
 
-        if (width > height) {
-          if (width > maxWidth) {
-            height = Math.round((height *= maxWidth / width));
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width = Math.round((width *= maxHeight / height));
-            height = maxHeight;
-          }
-        }
+  // Store profile pic in localStorage for room page
+  if (compressedProfilePicBase64) {
+    localStorage.setItem('profilePic', compressedProfilePicBase64);
+  } else {
+    localStorage.removeItem('profilePic');
+  }
 
-        canvas.width = width;
-        canvas.height = height;
+  localStorage.setItem('userName', userName);
+  localStorage.setItem('roomId', roomId);
+  localStorage.setItem('password', password);
 
-        ctx.clearRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            const compressedReader = new FileReader();
-            compressedReader.readAsDataURL(blob);
-            compressedReader.onload = () => {
-              resolve(compressedReader.result);
-            };
-            compressedReader.onerror = () => {
-              reject(new Error('خطا در تبدیل blob به base64'));
-            };
-          },
-          'image/jpeg',
-          quality
-        );
-      };
-
-      img.onerror = () => reject(new Error('خطا در بارگذاری تصویر'));
-    };
-
-    reader.onerror = () => reject(new Error('خطا در خواندن فایل'));
-  });
-}
+  // Redirect to room page with params
+  window.location.href = `room.html?roomId=${encodeURIComponent(roomId)}&password=${encodeURIComponent(password)}`;
+});

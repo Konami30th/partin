@@ -1,33 +1,36 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>روم چت - <b>Partin</b></title>
+  <title><b>Partin</b> - Room</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="container">
-    <h1><b>Partin</b> - روم چت</h1>
+  <div class="room-container">
+    <h1><b>Partin</b> Chat Room</h1>
 
-    <div id="usersList" class="users-list"></div>
-    <div id="chatBox" class="chat-box"></div>
+    <div id="users-list" class="users-list"></div>
 
-    <form id="messageForm" autocomplete="off">
-      <input type="text" id="messageInput" placeholder="پیام خود را بنویسید..." required />
-      <button type="submit">ارسال</button>
-    </form>
+    <div id="chat-container" class="chat-container">
+      <div id="messages" class="messages"></div>
 
-    <div id="voiceControls">
-      <button id="startRecord">شروع ضبط</button>
-      <button id="stopRecord" disabled>توقف ضبط</button>
-      <audio id="audioPlayback" controls style="display:none;"></audio>
-      <button id="sendAudio" disabled>ارسال صدا</button>
-    </div>
+      <div class="input-area">
+        <input id="message-input" type="text" placeholder="Type your message..." autocomplete="off" />
+        <button id="send-btn">Send</button>
+        <button id="start-record-btn" title="Start Voice Recording">🎙️</button>
+      </div>
 
-    <div id="micControl">
-      <button id="toggleMic">روشن/خاموش میکروفون</button>
-      <span id="micStatus">میکروفون خاموش</span>
+      <div id="audio-controls" class="audio-controls" style="display:none;">
+        <button id="play-audio-btn">▶️ Play</button>
+        <button id="pause-audio-btn">⏸️ Pause</button>
+        <button id="cancel-audio-btn">❌ Cancel</button>
+        <button id="confirm-audio-btn">✔️ Send</button>
+      </div>
+
+      <div>
+        <button id="mic-toggle-btn">Mic OFF</button>
+      </div>
     </div>
   </div>
 

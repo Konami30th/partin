@@ -1,7 +1,7 @@
 {
   "name": "partin",
   "version": "1.0.0",
-  "description": "چت روم صوتی و متنی با نام Partin",
+  "description": "Partin chat app",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
