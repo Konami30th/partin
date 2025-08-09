@@ -5,86 +5,98 @@ const io = require('socket.io')(http);
 
 const PORT = process.env.PORT || 3000;
 
-// Map of rooms: roomId -> password
-const rooms = {};
-
-// Map to keep track of users in rooms
-const usersInRooms = {}; // roomId -> [{socketId, userName, profilePic, micStatus}]
-
 app.use(express.static('public'));
 
-io.on('connection', (socket) => {
+const rooms = {}; // { roomId: { password, users: [{id, name, pic, socketId, micOn}], maxUsers:4 } }
+
+io.on('connection', socket => {
   console.log('User connected:', socket.id);
 
-  socket.on('join_room', ({ roomId, password, userName, profilePic }) => {
-    if (rooms[roomId]) {
-      if (rooms[roomId] !== password) {
-        socket.emit('room_password_error', 'Room already exists. Please change room ID or enter the correct password.');
+  socket.on('join-room', ({ roomId, password, userName, profilePic }, cb) => {
+    if (!roomId || !password || !userName) {
+      cb({ success: false, error: 'Missing roomId, password or userName' });
+      return;
+    }
+
+    let room = rooms[roomId];
+
+    if (room) {
+      // Room exists: check password
+      if (room.password !== password) {
+        cb({ success: false, error: 'Room exists but wrong password. Please use correct password or change Room ID.' });
+        return;
+      }
+      if (room.users.length >= room.maxUsers) {
+        cb({ success: false, error: 'Room is full (max 4 users).' });
         return;
       }
     } else {
-      rooms[roomId] = password; // create room with password
-      usersInRooms[roomId] = [];
+      // Create new room
+      rooms[roomId] = {
+        password,
+        users: [],
+        maxUsers: 4,
+      };
+      room = rooms[roomId];
     }
+
+    // Add user to room
+    const userObj = {
+      id: socket.id,
+      name: userName,
+      pic: profilePic || 'images/default-avatar.png',
+      socketId: socket.id,
+      micOn: false,
+    };
+    room.users.push(userObj);
 
     socket.join(roomId);
 
-    // Add user to room list
-    usersInRooms[roomId].push({
-      socketId: socket.id,
-      userName,
-      profilePic,
-      micStatus: false
-    });
+    // Send user list to room
+    io.to(roomId).emit('room-users', room.users);
 
-    // Send updated user list to all in room
-    io.to(roomId).emit('update_user_list', usersInRooms[roomId]);
+    cb({ success: true, roomUsers: room.users });
 
-    socket.emit('joined_room', roomId);
+    // Inform others
+    socket.to(roomId).emit('user-joined', userObj);
 
-    // Listen for chat messages
-    socket.on('send_message', (msg) => {
-      io.to(roomId).emit('receive_message', {
-        userName,
-        profilePic,
-        message: msg,
-        type: 'text'
-      });
-    });
-
-    // Listen for audio messages
-    socket.on('send_audio', (audioBase64) => {
-      io.to(roomId).emit('receive_message', {
-        userName,
-        profilePic,
-        message: audioBase64,
-        type: 'audio'
-      });
-    });
-
-    // Listen for mic status changes
-    socket.on('mic_status_change', (status) => {
-      const user = usersInRooms[roomId].find(u => u.socketId === socket.id);
-      if (user) {
-        user.micStatus = status;
-        io.to(roomId).emit('update_user_list', usersInRooms[roomId]);
-      }
-    });
-
-    // Disconnect
+    // Handle disconnect
     socket.on('disconnect', () => {
-      if (!usersInRooms[roomId]) return;
-      usersInRooms[roomId] = usersInRooms[roomId].filter(u => u.socketId !== socket.id);
-      io.to(roomId).emit('update_user_list', usersInRooms[roomId]);
-      // If room empty, delete it
-      if (usersInRooms[roomId].length === 0) {
+      if (!rooms[roomId]) return;
+      rooms[roomId].users = rooms[roomId].users.filter(u => u.id !== socket.id);
+      io.to(roomId).emit('room-users', rooms[roomId].users);
+      socket.to(roomId).emit('user-left', socket.id);
+      // Delete room if empty
+      if (rooms[roomId].users.length === 0) {
         delete rooms[roomId];
-        delete usersInRooms[roomId];
       }
+    });
+
+    // Handle mic toggle
+    socket.on('mic-toggle', micStatus => {
+      if (!rooms[roomId]) return;
+      const user = rooms[roomId].users.find(u => u.id === socket.id);
+      if (user) {
+        user.micOn = micStatus;
+        io.to(roomId).emit('mic-status-changed', { userId: socket.id, micOn: micStatus });
+      }
+    });
+
+    // Chat message send
+    socket.on('chat-message', data => {
+      io.to(roomId).emit('chat-message', data);
+    });
+
+    // Voice message send
+    socket.on('voice-message', data => {
+      io.to(roomId).emit('voice-message', data);
+    });
+
+    // Volume change per user
+    socket.on('volume-change', ({ targetUserId, volume }) => {
+      socket.to(roomId).emit('volume-changed', { targetUserId, volume });
     });
   });
 });
 
-http.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+http.listen(PORT, () => console.log(`Server running on port ${PORT}`));

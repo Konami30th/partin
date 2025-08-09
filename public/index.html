@@ -1,36 +1,40 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><b>Partin</b> - Login</title>
-  <link rel="stylesheet" href="css/styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><b>Partin</b> | Join Neon Group Chat</title>
+<link rel="stylesheet" href="css/styles.css" />
 </head>
-<body>
-  <div class="login-container">
-    <h1><b>Partin</b> Chat Login</h1>
-    <form id="login-form">
-      <label for="username">User Name</label>
-      <input id="username" type="text" placeholder="Enter your name" required />
+<body class="light-mode">
+  <div class="container neon-container">
+    <h1 class="neon-text">Welcome to <b>Partin</b> Neon Chat!</h1>
+
+    <form id="join-form" class="join-form" autocomplete="off">
+      <label for="userName">Your Name</label>
+      <input type="text" id="userName" name="userName" required placeholder="Enter your name" />
 
       <label for="roomId">Room ID</label>
-      <input id="roomId" type="text" placeholder="Enter room ID" required />
+      <input type="text" id="roomId" name="roomId" required placeholder="Enter Room ID" />
 
-      <label for="password">Password</label>
-      <input id="password" type="password" placeholder="Enter room password" required />
+      <label for="password">Room Password</label>
+      <input type="password" id="password" name="password" required placeholder="Enter Room Password" />
 
-      <label for="profilePic">Choose Profile Picture (optional)</label>
-      <input id="profilePic" type="file" accept="image/*" />
+      <label class="custom-file-upload">
+        <input type="file" id="profilePic" accept="image/*" />
+        Choose Profile Picture (optional)
+      </label>
 
-      <div id="preview-container" style="margin:10px 0;">
-        <img id="profilePreview" src="default-avatar.png" alt="Profile preview" style="width:80px; height:80px; border-radius:50%; object-fit:cover; display:none;" />
-      </div>
-
-      <button type="submit">Join Room</button>
+      <button type="submit" class="neon-button">Join Room</button>
     </form>
-    <div id="error-msg" style="color:red; margin-top: 1rem;"></div>
+
+    <div class="theme-toggle-container">
+      <button id="theme-toggle" class="neon-button">Toggle Dark/Light Mode</button>
+    </div>
+
+    <p id="form-error" class="error-message"></p>
   </div>
 
-  <script src="js/index.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

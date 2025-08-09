@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><b>Partin</b> | Neon Group Chat</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="chat-page light-mode">
+
+  <div class="chat-container">
+    <aside class="users-list" id="users-list">
+      <!-- User list populated dynamically -->
+    </aside>
+
+    <section class="chat-section">
+      <div class="messages" id="messages"></div>
+
+      <div class="input-area">
+        <button id="mic-toggle-btn" title="Toggle Mic 🎤">🎤</button>
+        <input type="text" id="message-input" placeholder="Type a message" autocomplete="off" />
+        <button id="start-record-btn" title="Record Voice 🎙️">🎙️</button>
+        <button id="send-btn" title="Send Message">➤</button>
+      </div>
+    </section>
+  </div>
+
+  <button id="theme-toggle" class="neon-button" style="position: fixed; bottom: 15px; right: 15px;">Toggle Dark/Light</button>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/chat.js"></script>
+
+</body>
+</html>
