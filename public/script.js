@@ -4,6 +4,7 @@ const joinSection = document.getElementById('join-section');
 const chatSection = document.getElementById('chat-section');
 const joinBtn = document.getElementById('join-btn');
 const joinError = document.getElementById('join-error');
+const loadingJoin = document.getElementById('loading-join');
 
 const nameInput = document.getElementById('name-input');
 const roomInput = document.getElementById('room-input');
@@ -31,11 +32,40 @@ let recording = false;
 let currentUser = null;
 let currentRoom = null;
 
-function dataURLtoBlob(dataurl) {
-  const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-  for(let i=0; i<n; i++) u8arr[i] = bstr.charCodeAt(i);
-  return new Blob([u8arr], {type:mime});
+function compressImage(file, maxWidth = 200, maxHeight = 200, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = event => {
+      image.src = event.target.result;
+    };
+    image.onload = () => {
+      let width = image.width;
+      let height = image.height;
+
+      if (width > maxWidth || height > maxHeight) {
+        if (width > height) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        } else {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(image, 0, 0, width, height);
+
+      canvas.toBlob(blob => {
+        resolve(blob);
+      }, 'image/jpeg', quality);
+    };
+    image.onerror = error => reject(error);
+  });
 }
 
 joinBtn.addEventListener('click', () => {
@@ -46,20 +76,35 @@ joinBtn.addEventListener('click', () => {
     joinError.textContent = 'لطفا همه فیلدها را پر کنید';
     return;
   }
+  joinError.textContent = '';
+  loadingJoin.classList.remove('hidden');
+  joinBtn.disabled = true;
+
   if (photoInput.files.length > 0) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      joinRoom(name, roomId, password, reader.result);
-    };
-    reader.readAsDataURL(photoInput.files[0]);
+    const file = photoInput.files[0];
+    compressImage(file).then(compressedBlob => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        joinRoom(name, roomId, password, reader.result);
+      };
+      reader.readAsDataURL(compressedBlob);
+    }).catch(() => {
+      // اگر فشرده سازی نشد، همان عکس اصلی را بفرست
+      const reader = new FileReader();
+      reader.onload = () => {
+        joinRoom(name, roomId, password, reader.result);
+      };
+      reader.readAsDataURL(file);
+    });
   } else {
-    // default photo
     joinRoom(name, roomId, password, null);
   }
 });
 
 function joinRoom(name, roomId, password, photo) {
   socket.emit('joinRoom', { roomId, password, name, photo }, (response) => {
+    loadingJoin.classList.add('hidden');
+    joinBtn.disabled = false;
     if (response.error) {
       joinError.textContent = response.error;
     } else {
@@ -114,7 +159,6 @@ function renderUsers(users) {
     }
     li.appendChild(micSpan);
 
-    // TODO: add volume control & speaker mute UI per user here (could be added later)
     usersList.appendChild(li);
   }
 }
@@ -166,7 +210,7 @@ function addChatMessage({ user, text, type, voiceBlob }) {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Voice recording logic
+// ضبط صدا
 
 recordBtn.addEventListener('click', () => {
   if (recording) {
@@ -195,10 +239,6 @@ function startRecording() {
       voiceAudio.src = url;
       voiceAudio.load();
       voicePreview.classList.remove('hidden');
-
-      // Store blob for sending later
-      voicePreview.dataset.blobUrl = url;
-      voicePreview.dataset.blob = blob;
     };
 
     mediaRecorder.start();
@@ -218,25 +258,28 @@ function stopRecording() {
 }
 
 sendVoiceBtn.addEventListener('click', () => {
-  const blob = voicePreview.dataset.blob;
-  if (!blob) return;
-  // Convert Blob to base64 to send via socket.io
+  if (recordedChunks.length === 0) {
+    alert('هیچ صدایی ضبط نشده است.');
+    return;
+  }
+  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
   const reader = new FileReader();
   reader.onloadend = () => {
     socket.emit('sendVoice', { roomId: currentRoom, voiceBlob: reader.result });
+    voicePreview.classList.add('hidden');
+    voiceAudio.src = '';
+    recordedChunks = [];
   };
   reader.readAsDataURL(blob);
-  voicePreview.classList.add('hidden');
 });
 
 cancelVoiceBtn.addEventListener('click', () => {
   voicePreview.classList.add('hidden');
   voiceAudio.src = '';
-  voicePreview.dataset.blob = null;
-  voicePreview.dataset.blobUrl = null;
+  recordedChunks = [];
 });
 
-// Mic toggle logic
+// کلید قطع/وصل میکروفون
 
 micToggleBtn.addEventListener('click', () => {
   if (micToggleBtn.classList.contains('active')) {
