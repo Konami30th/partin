@@ -1,169 +1,234 @@
 body {
   font-family: Tahoma, sans-serif;
-  background: #121212;
-  color: #eee;
-  margin: 0;
-  padding: 1rem;
-  direction: rtl;
-  user-select: none;
-}
-.container {
-  max-width: 900px;
-  margin: auto;
-  background: #222;
-  border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 0 10px #06f;
-}
-h1 {
-  text-align: center;
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: #06f;
-}
-.join-section input,
-.chat-panel input[type="text"] {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 0.8rem;
-  border-radius: 6px;
-  border: none;
-  font-size: 1.1rem;
-}
-.join-section button,
-.chat-panel button {
-  background: #06f;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
+  background: #0a0f2c;
   color: #fff;
-  cursor: pointer;
+  margin: 0;
+  text-align: center;
+}
+
+/* مرکز کردن فرم ورود */
+.join-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* وسط عمودی */
+  align-items: center;     /* وسط افقی */
+  height: 100vh;           /* کل ارتفاع صفحه */
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.join-section input,
+.join-section button {
+  width: 100%;
+  max-width: 320px;
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
   font-size: 1.1rem;
-  margin-top: 0.5rem;
-}
-.error {
-  color: #f55;
-  margin-top: 0.5rem;
-}
-.hidden {
-  display: none;
-}
-.users-panel {
-  background: #181818;
   border-radius: 6px;
-  padding: 10px;
-  width: 230px;
-  float: right;
-  height: 600px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+/* بخش کاربران کنار چت */
+.users-panel {
+  width: 180px;
+  background: #111b3d;
+  border-radius: 8px;
+  padding: 1rem;
   overflow-y: auto;
+  max-height: 500px;
   margin-left: 1rem;
 }
-.users-panel h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  text-align: center;
-  color: #06f;
-}
+
 .users-panel ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .users-panel li {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #333;
-  padding-bottom: 5px;
+  margin-bottom: 0.7rem;
 }
+
 .user-photo {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
   background-size: cover;
-  background-position: center;
-  margin-left: 10px;
+  border-radius: 50%;
+  margin-left: 0.7rem;
 }
+
+.mic-status.mic-off {
+  opacity: 0.5;
+}
+
 .mic-status {
+  margin-right: auto;
   font-size: 1.2rem;
-  margin-right: 5px;
-  color: #0f0;
 }
-.mic-off {
-  color: #f33;
-}
-.chat-panel {
-  background: #111;
-  border-radius: 6px;
-  height: 600px;
+
+/* بخش چت */
+.chat-section {
   display: flex;
-  flex-direction: column;
-  padding: 10px;
-  overflow: hidden;
-  flex: 1;
+  padding: 1rem;
 }
+
+.chat-section.hidden {
+  display: none;
+}
+
 .messages {
   flex-grow: 1;
+  background: #162050;
+  border-radius: 8px;
+  padding: 1rem;
+  max-height: 500px;
   overflow-y: auto;
-  margin-bottom: 10px;
-  padding-right: 5px;
+  margin-bottom: 1rem;
+  text-align: right;
 }
+
 .message {
-  margin-bottom: 10px;
   display: flex;
   align-items: flex-start;
+  margin-bottom: 1rem;
 }
-.message .user-photo {
-  width: 35px;
-  height: 35px;
-  margin-left: 10px;
-}
-.message .message-content {
-  max-width: 75%;
-  background: #222;
-  color: #eee;
-  padding: 8px 12px;
+
+.message-content {
+  background: #0a0f2c;
+  padding: 0.7rem 1rem;
   border-radius: 10px;
+  max-width: 75%;
   word-wrap: break-word;
+  text-align: right;
+  direction: rtl;
 }
-.message .message-content.voice-message {
-  background: #0044cc;
-  color: #fff;
+
+.voice-message audio {
+  width: 100%;
+  outline: none;
+  border-radius: 6px;
 }
-.message .message-content.system-message {
-  background: transparent;
-  color: #888;
+
+.message .user-photo {
+  width: 40px;
+  height: 40px;
+  margin-left: 0.5rem;
+  background-size: cover;
+  border-radius: 50%;
+}
+
+.system-message {
+  text-align: center;
   font-style: italic;
-  max-width: 100%;
-  margin-left: auto;
+  color: #0af;
 }
+
 .input-area {
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 0.7rem;
 }
-.input-area input[type="text"] {
+
+.input-area input {
   flex-grow: 1;
+  padding: 0.7rem 1rem;
+  border-radius: 6px 0 0 6px;
+  border: none;
+  font-size: 1rem;
 }
-.voice-area {
-  margin-bottom: 10px;
-}
-.voice-preview {
-  margin-top: 10px;
-}
-.mic-toggle-area {
-  text-align: center;
-}
-#mic-toggle-btn {
-  background: #f00;
-  padding: 8px 12px;
-  font-size: 1.1rem;
-  border-radius: 6px;
-  color: white;
+
+.input-area button {
+  padding: 0 1.5rem;
+  border-radius: 0 6px 6px 0;
+  border: none;
+  background: #1e90ff;
+  color: #fff;
   cursor: pointer;
-  user-select: none;
+  font-size: 1rem;
 }
-#mic-toggle-btn.active {
-  background: #0f0;
-  color: black;
+
+/* بخش ضبط صدا و پیش نمایش */
+.voice-area {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.voice-preview.hidden {
+  display: none;
+}
+
+.voice-preview {
+  margin-left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.voice-preview audio {
+  outline: none;
+  border-radius: 6px;
+}
+
+.voice-preview button {
+  background: #28a745;
+  border: none;
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.voice-preview button:last-child {
+  background: #dc3545;
+}
+
+/* دکمه قطع و وصل میکروفون */
+.mic-toggle-area {
+  margin-bottom: 1rem;
+}
+
+.mic-toggle-area button {
+  background: #ff4500;
+  border: none;
+  color: white;
+  padding: 0.7rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* واکنشگرا برای موبایل */
+@media (max-width: 768px) {
+  .chat-section {
+    flex-direction: column;
+  }
+  .users-panel {
+    width: 100%;
+    max-height: 150px;
+    margin: 0 0 1rem 0;
+    overflow-x: auto;
+    display: flex;
+  }
+  .users-panel ul {
+    display: flex;
+  }
+  .users-panel li {
+    flex-direction: column;
+    margin-right: 1rem;
+  }
+}
+
+/* بهبود نمایش ورودی ها و دکمه ها در موبایل */
+@media (max-width: 480px) {
+  .join-section {
+    padding: 0 0.5rem;
+  }
+  .join-section input,
+  .join-section button {
+    font-size: 1rem;
+  }
 }
