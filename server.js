@@ -10,11 +10,9 @@ app.use(express.static('public'));
 const rooms = {};
 
 io.on('connection', socket => {
-  console.log('کاربر متصل شد:', socket.id);
+  console.log('User connected:', socket.id);
 
   socket.on('joinRoom', ({ roomId, username, password }) => {
-    // ساده سازی رمز عبور (برای نمونه)  
-    // تو اینجا می‌تونی چک کنی رمز درست است یا نه
     socket.join(roomId);
 
     if (!rooms[roomId]) rooms[roomId] = [];
@@ -22,8 +20,8 @@ io.on('connection', socket => {
 
     io.to(roomId).emit('roomUsers', rooms[roomId]);
 
-    socket.emit('message', { username: 'سیستم', text: `به روم ${roomId} خوش آمدید، ${username}!` });
-    socket.to(roomId).emit('message', { username: 'سیستم', text: `${username} وارد روم شد.` });
+    socket.emit('message', { username: 'System', text: `Welcome to room ${roomId}, ${username}!` });
+    socket.to(roomId).emit('message', { username: 'System', text: `${username} has joined the room.` });
   });
 
   socket.on('chatMessage', msg => {
@@ -41,7 +39,6 @@ io.on('connection', socket => {
     }
   });
 
-  // مدیریت تغییر وضعیت میکروفون
   socket.on('micStatus', (isOn) => {
     for (const roomId in rooms) {
       const user = rooms[roomId].find(u => u.id === socket.id);
@@ -53,12 +50,9 @@ io.on('connection', socket => {
     }
   });
 
-  // مدیریت تغییر ولوم
   socket.on('setVolume', ({ targetId, volume }) => {
     for (const roomId in rooms) {
       if (rooms[roomId].some(u => u.id === socket.id)) {
-        // به کاربر هدف volume اختصاص بده
-        // اینجا فقط emit می‌کنیم چون ولوم سمت کلاینت تنظیم می‌شود
         socket.emit('volumeSet', { targetId, volume });
         break;
       }
@@ -72,11 +66,11 @@ io.on('connection', socket => {
         const username = rooms[roomId][idx].username;
         rooms[roomId].splice(idx, 1);
         io.to(roomId).emit('roomUsers', rooms[roomId]);
-        io.to(roomId).emit('message', { username: 'سیستم', text: `${username} روم را ترک کرد.` });
+        io.to(roomId).emit('message', { username: 'System', text: `${username} has left the room.` });
         break;
       }
     }
-    console.log('کاربر قطع شد:', socket.id);
+    console.log('User disconnected:', socket.id);
   });
 });
 

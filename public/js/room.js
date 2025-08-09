@@ -75,7 +75,6 @@ startRecordBtn.addEventListener('click', () => {
           sendAudioBtn.disabled = true;
           socket.emit('audioMessage', audioBlob);
           audioPlayback.style.display = 'none';
-          sendAudioBtn.disabled = true;
           audioChunks = [];
         };
       };
@@ -95,7 +94,6 @@ stopRecordBtn.addEventListener('click', () => {
 
 // دریافت پیام صوتی
 socket.on('audioMessage', (data) => {
-  // data باید به صورت blob یا base64 ارسال شود
   const audioElem = document.createElement('audio');
   audioElem.controls = true;
   audioElem.src = URL.createObjectURL(data);
@@ -112,6 +110,5 @@ toggleMicBtn.addEventListener('click', () => {
 
 // تنظیم ولوم برای کاربران دیگر (نمونه ساده)
 socket.on('volumeSet', ({ targetId, volume }) => {
-  // در اینجا می‌توانی ولوم را روی صدای کاربر مورد نظر اعمال کنی
-  console.log(`تنظیم ولوم ${volume} برای کاربر ${targetId}`);
+  console.log(`Volume set to ${volume} for user ${targetId}`);
 });
