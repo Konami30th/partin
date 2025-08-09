@@ -1,15 +1,15 @@
 {
-  "name": "partin-chat-app",
+  "name": "partin",
   "version": "1.0.0",
-  "description": "Chat app with voice and text using socket.io",
+  "description": "چت روم صوتی و متنی با نام Partin",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.7.1"
-  },
-  "author": "Partin",
-  "license": "MIT"
+  }
 }

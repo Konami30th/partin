@@ -9,10 +9,14 @@
 <body>
   <div class="container center-content">
     <h1><b>Partin</b> - ورود به روم</h1>
-    <form id="joinForm" action="room.html" method="GET" autocomplete="off">
-      <input type="text" name="roomId" placeholder="آیدی روم" required />
-      <input type="text" name="username" placeholder="نام کاربری" required />
-      <input type="password" name="password" placeholder="پسورد روم" required />
+    <form id="joinForm" autocomplete="off">
+      <input type="text" id="roomId" name="roomId" placeholder="آیدی روم" required />
+      <input type="text" id="username" name="username" placeholder="نام کاربری" required />
+      <input type="password" id="password" name="password" placeholder="پسورد روم" required />
+
+      <label for="profilePic">انتخاب عکس پروفایل:</label>
+      <input type="file" id="profilePic" name="profilePic" accept="image/*" />
+
       <button type="submit">ورود به روم</button>
     </form>
   </div>
