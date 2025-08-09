@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>چت صوتی و متنی پرتین 🎉</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2&display=swap');
+    body {
+      font-family: 'Baloo 2', cursive, Tahoma, sans-serif;
+      background: linear-gradient(135deg, #ff94c2 0%, #7afcff 100%);
+      color: #2d034e;
+      margin: 0;
+      padding: 1rem;
+      direction: rtl;
+      text-align: center;
+      user-select: none;
+    }
+    h1.brand {
+      font-size: 3rem;
+      font-weight: 900;
+      color: #ff3c78;
+      text-shadow: 2px 2px 0 #6a1b9a;
+      margin-bottom: 1rem;
+    }
+    input, button {
+      padding: 0.7rem 1rem;
+      margin: 0.4rem;
+      font-size: 1.1rem;
+      border-radius: 12px;
+      border: none;
+      outline: none;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: 'Baloo 2', cursive;
+    }
+    input {
+      width: 200px;
+      border: 2px solid #ff3c78;
+      background: #fff3f7;
+      color: #2d034e;
+      text-align: center;
+    }
+    input:focus {
+      border-color: #7a00ff;
+      box-shadow: 0 0 10px #7a00ff;
+      transform: scale(1.05);
+    }
+    button {
+      background: #ff3c78;
+      color: white;
+      box-shadow: 0 4px 15px #ff3c78aa;
+    }
+    button:hover {
+      background: #e02e62;
+      box-shadow: 0 6px 20px #e02e62cc;
+      transform: scale(1.1);
+    }
+    #chat {
+      border: 3px dashed #7a00ff;
+      height: 320px;
+      width: 95%;
+      max-width: 600px;
+      margin: 1.5rem auto;
+      padding: 0.8rem;
+      overflow-y: auto;
+      background: #fdf6ff;
+      border-radius: 20px;
+      color: #4a148c;
+      font-weight: 600;
+      text-align: right;
+      direction: rtl;
+      box-shadow: 0 0 15px #ff3c7899;
+    }
+    #messages div {
+      margin-bottom: 0.6rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 15px;
+      max-width: 80%;
+      word-wrap: break-word;
+      font-size: 1.05rem;
+    }
+    #messages div.self {
+      background: #ff3c78aa;
+      color: white;
+      margin-left: auto;
+      text-align: left;
+    }
+    #messages div.other {
+      background: #7a00ffaa;
+      color: white;
+      margin-right: auto;
+      text-align: left;
+    }
+    #status {
+      margin: 1rem auto;
+      font-weight: 900;
+      font-size: 1.2rem;
+      color: #7a00ff;
+      text-shadow: 1px 1px 0 white;
+      user-select: none;
+    }
+    audio {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1 class="brand">پرتین 🎉</h1>
+
+<div id="join-section">
+  <input id="room-id" placeholder="شناسه اتاق (مثلاً: 1234)" />
+  <input id="room-password" placeholder="رمز عبور اتاق" type="password" />
+  <button id="join-btn">پیوستن به اتاق</button>
+</div>
+
+<div id="chat-section" style="display:none;">
+  <div id="status">وضعیت: متصل نیستید</div>
+  <div id="chat">
+    <div id="messages"></div>
+  </div>
+  <input id="msg-input" placeholder="پیام خود را بنویسید..." autocomplete="off"/>
+  <button id="send-btn">ارسال</button>
+  <br/>
+  <button id="voice-toggle-btn" disabled>روشن کردن میکروفون</button>
+  <audio id="remote-audio" autoplay></audio>
+</div>
+
+<script>
+(() => {
+  const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(wsProtocol + '://' + location.host);
+  
+  const joinSection = document.getElementById('join-section');
+  const chatSection = document.getElementById('chat-section');
+  const roomIdInput = document.getElementById('room-id');
+  const roomPasswordInput = document.getElementById('room-password');
+  const joinBtn = document.getElementById('join-btn');
+  const status = document.getElementById('status');
+  const messagesDiv = document.getElementById('messages');
+  const msgInput = document.getElementById('msg-input');
+  const sendBtn = document.getElementById('send-btn');
+  const voiceToggleBtn = document.getElementById('voice-toggle-btn');
+  const remoteAudio = document.getElementById('remote-audio');
+
+  let localStream = null;
+  let peerConnections = {};
+  let roomId = '';
+  let userId = Math.floor(Math.random() * 10000);
+  let joined = false;
+
+  const configuration = {
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+  };
+
+  joinBtn.onclick = () => {
+    roomId = roomIdInput.value.trim();
+    const password = roomPasswordInput.value.trim();
+    if(!roomId || !password) {
+      alert('لطفا شناسه و رمز عبور اتاق را وارد کنید');
+      return;
+    }
+    ws.send(JSON.stringify({type:'join', roomId, password}));
+  };
+
+  ws.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
+    if(data.type === 'error') {
+      alert(data.message);
+    } else if(data.type === 'joined') {
+      joined = true;
+      joinSection.style.display = 'none';
+      chatSection.style.display = 'block';
+      status.innerText = `وضعیت: متصل شده به اتاق (کاربران: ${data.clientsCount})`;
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+        voiceToggleBtn.disabled = false;
+      } catch(e) {
+        alert('دسترسی میکروفون داده نشد');
+        voiceToggleBtn.disabled = true;
+      }
+      ws.send(JSON.stringify({type:'signal', from:userId, signalData:{type:'ready'}}));
+    } else if(data.type === 'user-joined') {
+      status.innerText = 'کاربری به اتاق پیوست 🎈';
+    } else if(data.type === 'user-left') {
+      status.innerText = 'کاربری اتاق را ترک کرد 😢';
+    } else if(data.type === 'chat') {
+      addMessage(`دیگران: ${data.message}`, 'other');
+    } else if(data.type === 'signal') {
+      handleSignal(data);
+    }
+  };
+
+  sendBtn.onclick = () => {
+    const msg = msgInput.value.trim();
+    if(!msg) return;
+    addMessage(`شما: ${msg}`, 'self');
+    ws.send(JSON.stringify({type:'chat', from:userId, message: msg}));
+    msgInput.value = '';
+  };
+
+  function addMessage(msg, who) {
+    const div = document.createElement('div');
+    div.textContent = msg;
+    div.className = who;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  voiceToggleBtn.onclick = () => {
+    if(!localStream) return alert('میکروفون فعال نیست');
+    if(voiceToggleBtn.textContent === 'روشن کردن میکروفون') {
+      startVoiceChat();
+      voiceToggleBtn.textContent = 'خاموش کردن میکروفون';
+    } else {
+      stopVoiceChat();
+      voiceToggleBtn.textContent = 'روشن کردن میکروفون';
+    }
+  };
+
+  function startVoiceChat() {
+    for(let id in peerConnections) {
+      const pc = peerConnections[id];
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+      if (pc.signalingState === "stable") {
+        pc.createOffer().then(offer => pc.setLocalDescription(offer))
+          .then(() => {
+            ws.send(JSON.stringify({
+              type: 'signal',
+              from: userId,
+              signalData: pc.localDescription
+            }));
+          });
+      }
+    }
+  }
+
+  function stopVoiceChat() {
+    for(let id in peerConnections) {
+      const pc = peerConnections[id];
+      pc.getSenders().forEach(sender => pc.removeTrack(sender));
+      pc.close();
+      delete peerConnections[id];
+    }
+    remoteAudio.srcObject = null;
+  }
+
+  function handleSignal(data) {
+    if(data.from === userId) return;
+
+    if(!peerConnections[data.from]) {
+      createPeerConnection(data.from);
+    }
+    const pc = peerConnections[data.from];
+    const signal = data.signalData;
+
+    if(signal.type === 'offer') {
+      pc.setRemoteDescription(new RTCSessionDescription(signal))
+        .then(() => localStream.getTracks().forEach(track => pc.addTrack(track, localStream)))
+        .then(() => pc.createAnswer())
+        .then(answer => pc.setLocalDescription(answer))
+        .then(() => {
+          ws.send(JSON.stringify({
+            type: 'signal',
+            from: userId,
+            signalData: pc.localDescription
+          }));
+        });
+    } else if(signal.type === 'answer') {
+      pc.setRemoteDescription(new RTCSessionDescription(signal));
+    } else if(signal.type === 'candidate') {
+      pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+    } else if(signal.type === 'ready') {
+      if (pc.signalingState === "stable") {
+        pc.createOffer()
+          .then(offer => pc.setLocalDescription(offer))
+          .then(() => {
+            ws.send(JSON.stringify({
+              type: 'signal',
+              from: userId,
+              signalData: pc.localDescription
+            }));
+          });
+      }
+    }
+  }
+
+  function createPeerConnection(peerId) {
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
+
+    pc.onicecandidate = event => {
+      if (event.candidate) {
+        ws.send(JSON.stringify({
+          type: 'signal',
+          from: userId,
+          signalData: {
+            type: 'candidate',
+            candidate: event.candidate
+          }
+        }));
+      }
+    };
+
+    pc.ontrack = event => {
+      remoteAudio.srcObject = event.streams[0];
+      remoteAudio.style.display = 'block';
+    };
+
+    peerConnections[peerId] = pc;
+  }
+})();
+</script>
+</body>
+</html>
