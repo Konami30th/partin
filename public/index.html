@@ -3,59 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><b>پرتین</b> - چت صوتی و متنی با استایل فان</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>ورود به روم - پرتین</title>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="container">
-
-    <h1><b>پرتین</b> 🚀</h1>
-
-    <div id="join-section" class="join-section">
-      <h2>وارد شوید</h2>
-      <input id="name-input" type="text" placeholder="نام شما" maxlength="20" autocomplete="off" />
-      <input id="room-input" type="text" placeholder="کد روم" maxlength="20" autocomplete="off" />
-      <input id="password-input" type="password" placeholder="کلمه عبور" maxlength="20" autocomplete="off" />
-      <input id="photo-input" type="file" accept="image/*" />
-      <button id="join-btn">ورود به روم</button>
-      <p id="join-error" class="error"></p>
-    </div>
-
-    <div id="loading-join" class="hidden" style="text-align:center; font-weight:bold; color:#0af;">در حال ورود به روم، لطفا صبر کنید...</div>
-
-    <div id="chat-section" class="chat-section hidden">
-      <div class="users-panel">
-        <h3>کاربران</h3>
-        <ul id="users-list"></ul>
-      </div>
-
-      <div class="chat-panel">
-        <div id="messages" class="messages"></div>
-
-        <div class="input-area">
-          <input id="message-input" type="text" placeholder="پیام خود را بنویسید..." maxlength="500" autocomplete="off" />
-          <button id="send-btn">ارسال</button>
-        </div>
-
-        <div class="voice-area">
-          <button id="record-btn" title="ضبط صدا">
-            🎤 ضبط صدا
-          </button>
-          <div id="voice-preview" class="voice-preview hidden">
-            <audio id="voice-audio" controls></audio>
-            <button id="send-voice-btn">ارسال صدا</button>
-            <button id="cancel-voice-btn">لغو</button>
-          </div>
-        </div>
-
-        <div class="mic-toggle-area">
-          <button id="mic-toggle-btn" title="قطع/وصل میکروفون">🔇 میکروفون خاموش</button>
-        </div>
-      </div>
-    </div>
+  <div class="container center-content">
+    <h1><b>پرتین</b> - ورود به روم</h1>
+    <form id="joinForm" action="room.html" method="GET" autocomplete="off">
+      <input type="text" name="roomId" placeholder="آیدی روم" required />
+      <input type="text" name="username" placeholder="نام کاربری" required />
+      <input type="password" name="password" placeholder="پسورد روم" required />
+      <button type="submit">ورود به روم</button>
+    </form>
   </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+  <script src="js/index.js"></script>
 </body>
 </html>

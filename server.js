@@ -7,77 +7,77 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static('public'));
 
-const rooms = {}; // roomId => { password, users: { socketId: {name, photo, micOn}} }
+const rooms = {};
 
-io.on('connection', (socket) => {
-  socket.on('joinRoom', ({roomId, password, name, photo}, callback) => {
-    if (!rooms[roomId]) {
-      rooms[roomId] = { password, users: {} };
-    }
-    if (rooms[roomId].password !== password) {
-      return callback({ error: 'کلمه عبور اشتباه است!' });
-    }
-    rooms[roomId].users[socket.id] = { name, photo, micOn: false };
+io.on('connection', socket => {
+  console.log('کاربر متصل شد:', socket.id);
+
+  socket.on('joinRoom', ({ roomId, username, password }) => {
+    // ساده سازی رمز عبور (برای نمونه)  
+    // تو اینجا می‌تونی چک کنی رمز درست است یا نه
     socket.join(roomId);
 
-    // Inform existing users about the new user
-    io.to(roomId).emit('updateUsers', rooms[roomId].users);
-    callback({ success: true, users: rooms[roomId].users });
+    if (!rooms[roomId]) rooms[roomId] = [];
+    rooms[roomId].push({ id: socket.id, username, micOn: false, volume: 1 });
 
-    // Notify all users in room about join
-    socket.to(roomId).emit('message', {
-      system: true,
-      text: `${name} به چت اضافه شد.`
-    });
+    io.to(roomId).emit('roomUsers', rooms[roomId]);
+
+    socket.emit('message', { username: 'سیستم', text: `به روم ${roomId} خوش آمدید، ${username}!` });
+    socket.to(roomId).emit('message', { username: 'سیستم', text: `${username} وارد روم شد.` });
   });
 
-  socket.on('sendMessage', ({roomId, message}) => {
-    const user = rooms[roomId]?.users[socket.id];
-    if (!user) return;
-    io.to(roomId).emit('message', {
-      user,
-      text: message,
-      type: 'text',
-    });
+  socket.on('chatMessage', msg => {
+    let roomIdFound = null;
+    let user = null;
+    for (const roomId in rooms) {
+      user = rooms[roomId].find(u => u.id === socket.id);
+      if (user) {
+        roomIdFound = roomId;
+        break;
+      }
+    }
+    if (roomIdFound && user) {
+      io.to(roomIdFound).emit('message', { username: user.username, text: msg });
+    }
   });
 
-  socket.on('sendVoice', ({roomId, voiceBlob}) => {
-    const user = rooms[roomId]?.users[socket.id];
-    if (!user) return;
-    io.to(roomId).emit('message', {
-      user,
-      voiceBlob,
-      type: 'voice',
-    });
+  // مدیریت تغییر وضعیت میکروفون
+  socket.on('micStatus', (isOn) => {
+    for (const roomId in rooms) {
+      const user = rooms[roomId].find(u => u.id === socket.id);
+      if (user) {
+        user.micOn = isOn;
+        io.to(roomId).emit('roomUsers', rooms[roomId]);
+        break;
+      }
+    }
   });
 
-  socket.on('micToggle', ({roomId, micOn}) => {
-    if (rooms[roomId]?.users[socket.id]) {
-      rooms[roomId].users[socket.id].micOn = micOn;
-      io.to(roomId).emit('updateUsers', rooms[roomId].users);
+  // مدیریت تغییر ولوم
+  socket.on('setVolume', ({ targetId, volume }) => {
+    for (const roomId in rooms) {
+      if (rooms[roomId].some(u => u.id === socket.id)) {
+        // به کاربر هدف volume اختصاص بده
+        // اینجا فقط emit می‌کنیم چون ولوم سمت کلاینت تنظیم می‌شود
+        socket.emit('volumeSet', { targetId, volume });
+        break;
+      }
     }
   });
 
   socket.on('disconnect', () => {
     for (const roomId in rooms) {
-      if (rooms[roomId].users[socket.id]) {
-        const name = rooms[roomId].users[socket.id].name;
-        delete rooms[roomId].users[socket.id];
-        io.to(roomId).emit('updateUsers', rooms[roomId].users);
-        io.to(roomId).emit('message', {
-          system: true,
-          text: `${name} چت را ترک کرد.`
-        });
-        // If no users left, remove room
-        if (Object.keys(rooms[roomId].users).length === 0) {
-          delete rooms[roomId];
-        }
+      const idx = rooms[roomId].findIndex(u => u.id === socket.id);
+      if (idx !== -1) {
+        const username = rooms[roomId][idx].username;
+        rooms[roomId].splice(idx, 1);
+        io.to(roomId).emit('roomUsers', rooms[roomId]);
+        io.to(roomId).emit('message', { username: 'سیستم', text: `${username} روم را ترک کرد.` });
         break;
       }
     }
+    console.log('کاربر قطع شد:', socket.id);
   });
 });
 
-http.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+http.listen(PORT, () => console.log(`Server running on port ${PORT}`));

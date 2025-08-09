@@ -1,16 +1,15 @@
 {
-  "name": "partin-chat",
+  "name": "partin",
   "version": "1.0.0",
-  "description": "Funny multi-user chat app پرتین with voice, profiles, and calling features",
+  "description": "Partin Chat app",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "socket.io": "^4.7.2"
+    "socket.io": "^4.7.1"
   },
-  "engines": {
-    "node": "18.x"
-  }
+  "author": "پرتین",
+  "license": "MIT"
 }
