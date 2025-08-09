@@ -1,85 +1,83 @@
 const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
-const path = require('path');
-
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 
-app.use(express.static(path.join(__dirname, 'public')));
+const PORT = process.env.PORT || 3000;
 
-const rooms = {}; // { roomId: { password, clients: Set<WebSocket> } }
+app.use(express.static('public'));
 
-wss.on('connection', function connection(ws) {
-  ws.isAlive = true;
-  ws.on('pong', () => { ws.isAlive = true; });
+const rooms = {}; // roomId => { password, users: { socketId: {name, photo, micOn}} }
 
-  ws.on('message', function incoming(message) {
-    try {
-      const data = JSON.parse(message);
-      if(data.type === 'join') {
-        const { roomId, password } = data;
-        if(!rooms[roomId]) {
-          rooms[roomId] = { password, clients: new Set() };
-        }
-        if(rooms[roomId].password !== password) {
-          ws.send(JSON.stringify({ type: 'error', message: 'رمز عبور اشتباه است' }));
-          return;
-        }
-        ws.roomId = roomId;
-        rooms[roomId].clients.add(ws);
-        ws.send(JSON.stringify({ type: 'joined', clientsCount: rooms[roomId].clients.size }));
-        broadcastExcept(ws, roomId, JSON.stringify({ type: 'user-joined' }));
-      }
-      else if(data.type === 'signal') {
-        broadcastExcept(ws, ws.roomId, JSON.stringify({
-          type: 'signal',
-          from: data.from,
-          signalData: data.signalData
-        }));
-      }
-      else if(data.type === 'chat') {
-        broadcastExcept(ws, ws.roomId, JSON.stringify({
-          type: 'chat',
-          from: data.from,
-          message: data.message
-        }));
-      }
-    } catch (e) {
-      console.error('Invalid message:', message);
+io.on('connection', (socket) => {
+  socket.on('joinRoom', ({roomId, password, name, photo}, callback) => {
+    if (!rooms[roomId]) {
+      rooms[roomId] = { password, users: {} };
+    }
+    if (rooms[roomId].password !== password) {
+      return callback({ error: 'کلمه عبور اشتباه است!' });
+    }
+    rooms[roomId].users[socket.id] = { name, photo, micOn: false };
+    socket.join(roomId);
+
+    // Inform existing users about the new user
+    io.to(roomId).emit('updateUsers', rooms[roomId].users);
+    callback({ success: true, users: rooms[roomId].users });
+
+    // Notify all users in room about join
+    socket.to(roomId).emit('message', {
+      system: true,
+      text: `${name} به چت اضافه شد.`
+    });
+  });
+
+  socket.on('sendMessage', ({roomId, message}) => {
+    const user = rooms[roomId]?.users[socket.id];
+    if (!user) return;
+    io.to(roomId).emit('message', {
+      user,
+      text: message,
+      type: 'text',
+    });
+  });
+
+  socket.on('sendVoice', ({roomId, voiceBlob}) => {
+    const user = rooms[roomId]?.users[socket.id];
+    if (!user) return;
+    io.to(roomId).emit('message', {
+      user,
+      voiceBlob,
+      type: 'voice',
+    });
+  });
+
+  socket.on('micToggle', ({roomId, micOn}) => {
+    if (rooms[roomId]?.users[socket.id]) {
+      rooms[roomId].users[socket.id].micOn = micOn;
+      io.to(roomId).emit('updateUsers', rooms[roomId].users);
     }
   });
 
-  ws.on('close', () => {
-    if(ws.roomId && rooms[ws.roomId]) {
-      rooms[ws.roomId].clients.delete(ws);
-      broadcastExcept(ws, ws.roomId, JSON.stringify({ type: 'user-left' }));
-      if(rooms[ws.roomId].clients.size === 0) {
-        delete rooms[ws.roomId];
+  socket.on('disconnect', () => {
+    for (const roomId in rooms) {
+      if (rooms[roomId].users[socket.id]) {
+        const name = rooms[roomId].users[socket.id].name;
+        delete rooms[roomId].users[socket.id];
+        io.to(roomId).emit('updateUsers', rooms[roomId].users);
+        io.to(roomId).emit('message', {
+          system: true,
+          text: `${name} چت را ترک کرد.`
+        });
+        // If no users left, remove room
+        if (Object.keys(rooms[roomId].users).length === 0) {
+          delete rooms[roomId];
+        }
+        break;
       }
     }
   });
 });
 
-function broadcastExcept(sender, roomId, msg) {
-  if(!rooms[roomId]) return;
-  for(const client of rooms[roomId].clients) {
-    if(client !== sender && client.readyState === WebSocket.OPEN) {
-      client.send(msg);
-    }
-  }
-}
-
-setInterval(() => {
-  wss.clients.forEach(ws => {
-    if(!ws.isAlive) return ws.terminate();
-    ws.isAlive = false;
-    ws.ping();
-  });
-}, 30000);
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+http.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

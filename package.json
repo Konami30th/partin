@@ -1,13 +1,16 @@
 {
-  "name": "PARTIN",
+  "name": "partin-chat",
   "version": "1.0.0",
-  "description": "Real-time multi-user text and voice chat app",
+  "description": "Funny multi-user chat app پرتین with voice, profiles, and calling features",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "ws": "^8.13.0"
+    "socket.io": "^4.7.2"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
